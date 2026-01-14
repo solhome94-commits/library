@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>초등 노벨 문학상 탐험대</title>
+    <style>
+        body {
+            font-family: 'Nanum Gothic', sans-serif;
+            background-color: #fff9e6;
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; margin: 0; color: #333;
+        }
+
+        #game-container {
+            width: 90%; max-width: 500px; background: white;
+            border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow: hidden; text-align: center; position: relative;
+        }
+
+        /* 헤더 스타일 */
+        .header { background: #f39c12; color: white; padding: 20px; }
+        .header h1 { margin: 0; font-size: 22px; }
+
+        /* 화면들 */
+        .screen { padding: 30px; display: none; }
+        .active { display: block; }
+
+        /* 인트로 화면 */
+        .intro-img { font-size: 60px; margin-bottom: 20px; }
+        .start-btn {
+            background: #f39c12; color: white; border: none; padding: 15px 40px;
+            border-radius: 30px; font-size: 18px; cursor: pointer; transition: 0.3s;
+        }
+        .start-btn:hover { transform: scale(1.05); background: #e67e22; }
+
+        /* 퀴즈 화면 */
+        .question-box { font-size: 18px; font-weight: bold; margin-bottom: 20px; min-height: 60px; }
+        .options { display: grid; gap: 10px; }
+        .option-btn {
+            padding: 12px; border: 2px solid #eee; border-radius: 10px;
+            background: white; cursor: pointer; transition: 0.2s; font-size: 15px;
+        }
+        .option-btn:hover { background: #fff4e0; border-color: #f39c12; }
+
+        /* 카드 매칭 화면 */
+        .grid {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 10px; margin-top: 15px;
+        }
+        .card {
+            height: 100px; background: #3498db; color: white;
+            border-radius: 10px; display: flex; align-items: center;
+            justify-content: center; font-size: 12px; cursor: pointer;
+            padding: 5px; word-break: keep-all; font-weight: bold;
+        }
+        .card.flipped { background: white; color: #333; border: 2px solid #3498db; }
+        .card.matched { background: #2ecc71; visibility: hidden; }
+
+        /* 결과 화면 */
+        .result-score { font-size: 40px; color: #f39c12; font-weight: bold; margin: 20px 0; }
+        .winner-img { width: 150px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div class="header">
+        <h1>🏆 노벨 문학상 탐험대</h1>
+    </div>
+
+    <div id="intro-screen" class="screen active">
+        <div class="intro-img">📜</div>
+        <p>전 세계에서 가장 훌륭한 책을 쓴<br>작가들이 받는 <b>'노벨 문학상'</b>!<br><br>작가의 이름과 작품을 찾아 떠나볼까요?</p>
+        <button class="start-btn" onclick="startQuiz()">탐험 시작!</button>
+    </div>
+
+    <div id="quiz-screen" class="screen">
+        <div id="quiz-progress" style="font-size: 12px; color: #888; margin-bottom: 10px;">질문 1/3</div>
+        <div class="question-box" id="question">질문 로딩 중...</div>
+        <div class="options" id="options"></div>
+    </div>
+
+    <div id="matching-screen" class="screen">
+        <p><b>미션: 작가와 작품을 짝지어주세요!</b></p>
+        <div class="grid" id="card-grid"></div>
+    </div>
+
+    <div id="result-screen" class="screen">
+        <h2>축하합니다!</h2>
+        <div class="result-score" id="final-score">0점</div>
+        <p id="result-msg"></p>
+        <img class="winner-img" src="https://cdn-icons-png.flaticon.com/512/3112/3112946.png" alt="상장">
+        <br>
+        <button class="start-btn" onclick="location.reload()">다시 하기</button>
+    </div>
+</div>
+
+<script>
+    // 퀴즈 데이터
+    const quizData = [
+        {
+            q: "노벨 상을 만든 '알프레드 노벨'은 어느 나라 사람일까요?",
+            a: ["스웨덴", "대한민국", "미국", "프랑스"],
+            correct: 0
+        },
+        {
+            q: "2024년, 한국인 최초로 노벨 문학상을 받은 작가는 누구일까요?",
+            a: ["황순원", "한강", "이문열", "방정환"],
+            correct: 1
+        },
+        {
+            q: "노벨 문학상은 어떤 사람에게 주는 상일까요?",
+            a: ["운동을 잘하는 사람", "그림을 잘 그리는 사람", "훌륭한 글을 쓴 사람", "노래를 잘 부르는 사람"],
+            correct: 2
+        }
+    ];
+
+    // 카드 매칭 데이터
+    const matchItems = [
+        { key: '한강', val: '채식주의자' },
+        { key: '생텍쥐페리', val: '어린 왕자' },
+        { key: '헤르만 헤세', val: '데미안' }
+    ];
+
+    let currentQuizIdx = 0;
+    let score = 0;
+    let flippedCards = [];
+
+    // 화면 전환 함수
+    function showScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+    }
+
+    // 퀴즈 시작
+    function startQuiz() {
+        showScreen('quiz-screen');
+        loadQuiz();
+    }
+
+    function loadQuiz() {
+        const data = quizData[currentQuizIdx];
+        document.getElementById('quiz-progress').innerText = `질문 ${currentQuizIdx + 1} / ${quizData.length}`;
+        document.getElementById('question').innerText = data.q;
+        
+        const optionsDiv = document.getElementById('options');
+        optionsDiv.innerHTML = '';
+        data.a.forEach((opt, i) => {
+            const btn = document.createElement('button');
+            btn.classList.add('option-btn');
+            btn.innerText = opt;
+            btn.onclick = () => checkQuiz(i);
+            optionsDiv.appendChild(btn);
+        });
+    }
+
+    function checkQuiz(idx) {
+        if (idx === quizData[currentQuizIdx].correct) {
+            score += 20;
+            alert("정답이에요! 참 잘했어요. 👏");
+        } else {
+            alert("아쉬워요! 다음 문제를 맞춰봐요. 😊");
+        }
+        
+        currentQuizIdx++;
+        if (currentQuizIdx < quizData.length) {
+            loadQuiz();
+        } else {
+            startMatching();
+        }
+    }
+
+    // 카드 매칭 시작
+    function startMatching() {
+        showScreen('matching-screen');
+        const grid = document.getElementById('card-grid');
+        
+        // 데이터 섞기
+        let cards = [];
+        matchItems.forEach(item => {
+            cards.push({ text: item.key, id: item.key });
+            cards.push({ text: item.val, id: item.key });
+        });
+        cards.sort(() => Math.random() - 0.5);
+
+        cards.forEach((c, i) => {
+            const cardDiv = document.createElement('div');
+            cardDiv.classList.add('card');
+            cardDiv.innerText = "?";
+            cardDiv.dataset.id = c.id;
+            cardDiv.dataset.text = c.text;
+            cardDiv.onclick = function() { flipCard(this); };
+            grid.appendChild(cardDiv);
+        });
+    }
+
+    function flipCard(card) {
+        if (flippedCards.length < 2 && !card.classList.contains('flipped')) {
+            card.classList.add('flipped');
+            card.innerText = card.dataset.text;
+            flippedCards.push(card);
+
+            if (flippedCards.length === 2) {
+                setTimeout(checkMatch, 800);
+            }
+        }
+    }
+
+    function checkMatch() {
+        const [c1, c2] = flippedCards;
+        if (c1.dataset.id === c2.dataset.id) {
+            c1.classList.add('matched');
+            c2.classList.add('matched');
+            score += 20;
+            if (document.querySelectorAll('.matched').length === 6) {
+                showResult();
+            }
+        } else {
+            c1.classList.remove('flipped');
+            c2.classList.remove('flipped');
+            c1.innerText = "?";
+            c2.innerText = "?";
+        }
+        flippedCards = [];
+    }
+
+    // 결과 화면
+    function showResult() {
+        showScreen('result-screen');
+        document.getElementById('final-score').innerText = score + "점";
+        let msg = "";
+        if (score >= 80) msg = "당신은 멋진 노벨 문학상 박사님군요! 🏅";
+        else if (score >= 50) msg = "작가님들에 대해 많이 배웠네요! 조금 더 책과 친해져 볼까요? 📚";
+        else msg = "탐험 완료! 노벨 문학상 작가님들의 책을 한 번 읽어보세요! 📖";
+        document.getElementById('result-msg').innerText = msg;
+    }
+</script>
+
+</body>
+</html>
