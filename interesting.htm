@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>나의 비밀 책방 찾기 📚</title>
+    <style>
+        :root { --primary: #6c5ce7; --bg: #f0f2f5; }
+        body { font-family: 'Nanum Gothic', sans-serif; background-color: var(--bg); display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        #game-box { background: white; padding: 40px; border-radius: 25px; shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; width: 450px; border: 4px solid var(--primary); }
+        .progress { font-size: 14px; color: #888; margin-bottom: 10px; }
+        h1 { color: var(--primary); font-size: 24px; margin-bottom: 20px; }
+        .question { font-size: 20px; font-weight: bold; margin-bottom: 30px; line-height: 1.4; }
+        .choice-btn { width: 100%; padding: 15px; margin-bottom: 10px; border: 2px solid #ddd; border-radius: 15px; background: white; cursor: pointer; font-size: 16px; transition: 0.3s; }
+        .choice-btn:hover { background-color: #efedff; border-color: var(--primary); transform: translateY(-3px); }
+        #result { display: none; }
+        .result-title { font-size: 22px; color: #2d3436; margin-bottom: 15px; }
+        .result-desc { background: #f9f9f9; padding: 20px; border-radius: 15px; line-height: 1.6; margin-bottom: 20px; }
+        .retry-btn { background: var(--primary); color: white; border: none; padding: 12px 25px; border-radius: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div id="game-box">
+    <div id="quiz-section">
+        <div class="progress" id="progress">질문 1 / 5</div>
+        <h1 id="title">🔮 나의 독서 취향은?</h1>
+        <div class="question" id="question">어느 날, 마법 포털이 열렸어! 어디로 가고 싶니?</div>
+        <div id="choices">
+            </div>
+    </div>
+
+    <div id="result">
+        <h1>✨ 결과 발표 ✨</h1>
+        <div class="result-title" id="res-type">타입 이름</div>
+        <div class="result-desc" id="res-desc">설명 내용</div>
+        <button class="retry-btn" onclick="location.reload()">다시 하기</button>
+    </div>
+</div>
+
+<script>
+    const questions = [
+        { q: "모험을 떠난다면 누구와 함께 가고 싶어?", c: [{t:"용맹한 기사와 마법사", v:"fantasy"}, {t:"사건을 해결하는 탐정", v:"mystery"}, {t:"나를 잘 아는 단짝 친구", v:"story"}, {t:"말하는 로봇과 외계인", v:"science"}] },
+        { q: "도서관에서 가장 먼저 눈에 띄는 책 표지는?", c: [{t:"번쩍이는 칼이 그려진 그림", v:"fantasy"}, {t:"어두운 밤, 돋보기가 그려진 그림", v:"mystery"}, {t:"따뜻한 햇살 아래 웃고 있는 아이들", v:"story"}, {t:"우주선과 복잡한 기계 그림", v:"science"}] },
+        { q: "어떤 능력을 하나 가질 수 있다면?", c: [{t:"불을 뿜거나 하늘을 날기", v:"fantasy"}, {t:"사람들의 거짓말을 알아채기", v:"mystery"}, {t:"동물의 마음을 이해하기", v:"story"}, {t:"무엇이든 척척 고치는 손", v:"science"}] },
+        { q: "가장 재미있게 들었던 이야기는?", c: [{t:"옛날 옛적 공주와 용의 이야기", v:"fantasy"}, {t:"사라진 보물을 찾는 범인 찾기", v:"mystery"}, {t:"내 주변 친구들의 학교 생활", v:"story"}, {t:"미래 세계와 신기한 발명품", v:"science"}] },
+        { q: "주말에 시간이 생긴다면?", c: [{t:"상상의 나라로 모험 떠나기", v:"fantasy"}, {t:"퍼즐이나 퀴즈 맞히기", v:"mystery"}, {t:"일기 쓰거나 친구와 수다 떨기", v:"story"}, {t:"새로운 장난감 조립하기", v:"science"}] }
+    ];
+
+    const results = {
+        fantasy: { name: "🏰 상상력 대장 판타지형", desc: "너는 상상력이 정말 풍부하구나! 용, 마법, 전설 이야기를 좋아해. <br><b>추천 도서:</b> '해리포터', '전천당', '그리스 로마 신화'" },
+        mystery: { name: "🔍 날카로운 눈 탐정형", desc: "너는 관찰력이 뛰어나고 퍼즐 맞추기를 좋아하는구나! <br><b>추천 도서:</b> '추리 천재 엉덩이 탐정', '명탐정 코난', '셜록 홈즈'" },
+        story: { name: "💖 마음 따뜻한 공감형", desc: "너는 친구의 마음을 잘 이해하고 따뜻한 이야기를 좋아해. <br><b>추천 도서:</b> '긴긴밤', '푸른 사자 와니니', '만복이네 떡집'" },
+        science: { name: "🚀 호기심 가득 척척박사형", desc: "너는 세상이 어떻게 돌아가는지 궁금해하고 새로운 지식을 좋아해! <br><b>추천 도서:</b> 'Why? 시리즈', '내일은 실험왕', '우주 과학 만화'" }
+    };
+
+    let currentStep = 0;
+    let scores = { fantasy: 0, mystery: 0, story: 0, science: 0 };
+
+    function renderQuestion() {
+        const qData = questions[currentStep];
+        document.getElementById('progress').innerText = `질문 ${currentStep + 1} / ${questions.length}`;
+        document.getElementById('question').innerText = qData.q;
+        const choiceDiv = document.getElementById('choices');
+        choiceDiv.innerHTML = "";
+
+        qData.c.forEach(choice => {
+            const btn = document.createElement('button');
+            btn.className = 'choice-btn';
+            btn.innerText = choice.t;
+            btn.onclick = () => select(choice.v);
+            choiceDiv.appendChild(btn);
+        });
+    }
+
+    function select(val) {
+        scores[val]++;
+        currentStep++;
+        if (currentStep < questions.length) {
+            renderQuestion();
+        } else {
+            showResult();
+        }
+    }
+
+    function showResult() {
+        document.getElementById('quiz-section').style.display = 'none';
+        document.getElementById('result').style.display = 'block';
+        
+        // 가장 높은 점수 찾기
+        const winner = Object.keys(scores).reduce((a, b) => scores[a] > scores[b] ? a : b);
+        document.getElementById('res-type').innerText = results[winner].name;
+        document.getElementById('res-desc').innerHTML = results[winner].desc;
+    }
+
+    renderQuestion();
+</script>
+
+</body>
+</html>

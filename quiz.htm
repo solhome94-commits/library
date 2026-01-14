@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>정보활용능력평가</title>
+  <style>
+    body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR",Arial,sans-serif;margin:0;background:#f6f7fb;color:#111}
+    .wrap{max-width:980px;margin:0 auto;padding:24px}
+    .card{background:#fff;border-radius:14px;padding:18px;box-shadow:0 6px 20px rgba(0,0,0,.06);margin-bottom:14px}
+    h1{margin:0 0 8px;font-size:22px}
+    .desc{margin:0;color:#444;line-height:1.5}
+    .q-title{font-weight:800;margin:0 0 10px;line-height:1.45}
+    .q-text{margin:0 0 12px;color:#333;line-height:1.6;white-space:pre-wrap}
+    .opt{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border-radius:10px;border:1px solid #e7e9f2;margin:8px 0}
+    .opt:hover{background:#fafbff}
+    .opt input{margin-top:3px}
+    .req{color:#d61f1f;font-weight:800;margin-left:6px}
+    .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:14px}
+    button{cursor:pointer;border:0;border-radius:12px;padding:10px 14px;font-weight:800}
+    .btn-primary{background:#2b5cff;color:#fff}
+    .btn-ghost{background:#eef2ff;color:#1a2b7a}
+    .error{color:#c01818;font-weight:800;margin:10px 0 0}
+    .scoreBox{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+    .badge{display:inline-block;padding:6px 10px;border-radius:999px;font-size:13px;font-weight:800;background:#f1f5ff;color:#162a7a}
+    .feedback{margin-top:10px;font-weight:800}
+    .ok{color:#0b7a2a}
+    .no{color:#c01818}
+    .result{white-space:pre-wrap;background:#0b1020;color:#e7ecff;padding:14px;border-radius:12px;overflow:auto}
+    .meta{font-size:12px;color:#666;margin-top:10px;line-height:1.5}
+
+    /* ✅ 링크/이미지 표시용 */
+    .q-media{margin:10px 0 12px}
+    .q-media img{max-width:100%;height:auto;border-radius:12px;border:1px solid #e7e9f2}
+    .q-links{margin:8px 0 0;padding:0;list-style:none}
+    .q-links li{margin:6px 0}
+    .q-link{display:inline-block;font-weight:800;color:#1a2b7a;text-decoration:none}
+    .q-link:hover{text-decoration:underline}
+    .q-link-hint{font-size:12px;color:#666;margin-left:6px;font-weight:700}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>정보활용능력평가</h1>
+      <p class="desc">문항(1~27)과 정답을 기반으로 자동 채점됩니다.</p>
+      <div class="scoreBox" id="scoreBox" style="display:none;">
+        <span class="badge" id="scoreText"></span>
+        <span class="badge" id="ratioText"></span>
+      </div>
+    </div>
+
+    <form id="survey"></form>
+
+    <div class="card">
+      <div class="actions">
+        <button type="button" class="btn-ghost" id="btnClear">초기화</button>
+        <button type="button" class="btn-primary" id="btnSubmit">제출</button>
+      </div>
+      <p class="error" id="error" style="display:none;"></p>
+    </div>
+
+    <div class="card" id="resultCard" style="display:none;">
+      <p class="q-title" style="margin-bottom:10px;">제출 결과(JSON)</p>
+      <div class="result" id="result"></div>
+      <div class="meta">원하시면 이 JSON을 서버/구글시트로 저장하도록 확장할 수 있어요.</div>
+    </div>
+  </div>
+
+<script>
+  // ===== 문항(업로드 파일 기반) =====
+  const questions = [
+    {"id":"q1","num":1,"title":"1. 정보 과제 해결 단계","text":"다음 이야기를 읽고 빈칸에 들어갈 정보 과제 해결 단계는 무엇일까요?\n\n<보기>\nOO 이는 ‘지하철역 개발’과 관련된 뉴스를 읽고 지하철역 노선을 어떻게 새로 만들면 좋을지 의견을 제시하고 싶어졌습니다.\n\n<뉴스 내용>\nOO 시에 새로운 지하철 노선이 생길 예정이라고 합니다. 새로운 지하철 노선은 OO 지역 사람들의 유동성이 많은 곳, 관광하기 편한 곳, 기존 지하철 노선과 배차시간에 대한 의견을 듣고 OO 지역 주민의 의견을 적극 반영하여 설계할 예정입니다.\n먼저 OO 이는 정보 과제와 정보 요구 파악하고 (            )를 하였습니다. 그 뒤 정보 문제를 분석해보고, 정보 종합과 정보를 표현한 뒤, 정보활동을 평가해보았습니다.","options":["탐색한 정보를 읽고, 보고, 듣기","정보 과제 해결을 위한 정보 탐색하기","분석한 정보를 정보 과제 알맞게 내용 재구성 하기","정보 활동 전체 단계를 되돌아보기"]},
+
+    {"id":"q2","num":2,"title":"2. 탐색접근, 독서","text":"‘탄소중립’이라는 정보과제를 수행하기 위해 관련 자료를 찾아보고 싶습니다. 탄소중립은 어떤 성격을 가지고 있고, 그 범위는 어디까지일까요? 다음 중 탄소중립과 관련된 성격과 범위 중 가장 거리가 먼 것은 무엇일까요?\n(아래 참고링크 클릭)","options":["탄소중립의 정의와 종류","탄소중립을 위한 실천 방법","탄소중립의 효과","탄소중립과 질병"]},
+
+    {"id":"q3","num":3,"title":"3. 정보탐색","text":"‘환경 오염의 실태와 대책’이라는 주제로 자료를 조사하려고 합니다. 다음 중 주제에 맞는 정보원을 연결한 것으로 올바르지 않은 것은 무엇일까요?","options":["환경 오염의 종류와 원인- 환경오염 주제 단행본","환경 오염의 문제점과 실태- 환경오염 관련 질병을 치료한 의사","환경 오염의 극복 사례 및 방법- 환경 보호 단체","환경 오염의 사례-환경 관련 사이트"]},
+
+    {"id":"q4","num":4,"title":"4. 탐색접근 - 탐색","text":"도서관에서 ‘잊으면 안 되는 제주도 역사’라는 책을 찾고 싶습니다. 도서관 서가의 분류는 ‘한국십진분류법’을 이용하고 있습니다. 다음 중 어떤 분류 기호가 적힌 서가를 찾아보면 될까요?","options":["300","400","500","900"]},
+
+    {"id":"q5","num":5,"title":"5. 정보평가 - 권위, 정확성, 목적, 내용의 관련성, 최신성","text":"단행본에서 자료를 찾았을 때 자료를 평가하는 방법에 대한 설명입니다. 다음 중 올바르지 않은 것은 무엇일까요?","options":["권위-작가의 편견이 드러나 있지 않은가?","목적- 작가의 의도가 분명하게 드러난 저작물인가?","정확성-작가가 말한 사실이 올바른가?","내용의 관련성-주제와 관련된 정보를 제공해주는가?"]},
+
+    {"id":"q6","num":6,"title":"6. 정보평가","text":"웹사이트에서 자료를 찾았을 때 자료를 평가하는 방법에 대한 설명입니다. 다음 중 올바르지 않은 것은 무엇일까요?","options":["목적- 사이트의 목적이 분명한가","정확성- 주기적으로 업데이트를 하는가?","최신성- 정보를 수시로 개정하는가?","기술적인 면- 사이트는 포털 사이트에서 찾기 쉬운가?"]},
+
+    {"id":"q7","num":7,"title":"7. 정보분석","text":"다음 글을 읽고 밑줄 친 내용 중 사실이 아닌 것은 무엇일까요?\n\n<보기>\n이빨이 없는 수염고래는 바닷물을 빨아들인 다음 수염에서 걸러진 크릴을 먹는다. ① 수염고래는 이빨이 없다. ② 수염고래는 크릴을 먹는다. ③ 수염고래는 바닷물을 빨아들인다. ④ 수염고래는 바닷물을 마신다.","options":["1번","2번","3번","4번"]},
+
+    {"id":"q8","num":8,"title":"8. 정보분석","text":"다음 자료를 읽고 ‘환경 오염’에 관한 보고서를 쓰려고 한다. 주어진 자료는 각각 단행본에서 발췌하였다. 두 자료를 함께 보고 공통적으로 종합할 수 있는 내용은 무엇일까요?\n\n<보기 1>\n(도서 발췌)\n\n<보기 2>\n(도서 발췌)","options":["환경 오염에 따른 지구 온난화 문제","국가적 환경 보호 대책","내가 실천할 수 있는 환경 보호 방법","환경 오염의 종류"]},
+
+    {"id":"q9","num":9,"title":"9. 정보표현","text":"다음 자료를 읽고 도서관에서 우리나라에서 자라는 풀에 대한 자료를 찾아 ‘토끼풀’에 대한 보고서를 쓰기 위해 표로 정리하려고 한다. 주어진 내용을 읽고 정보를 분석하기 어려운 것은 무엇일까요?\n<표>","options":["토끼풀의 번식력","토끼풀 꽃의 모습","토끼풀 이름의 의미","기후변화와 토끼풀"]},
+
+    {"id":"q10","num":10,"title":"10. 정보 활동 평가(과정)","text":"정보 과제를 수행한 뒤 과정에 대해 단계별 평가를 하려고 합니다. 다음 중 정보 문제 해결과정에 대한 단계별 평가 내용이 올바르지 않은 것은 무엇일까요?","options":["정보과제 확인과 정보요구 파악하기- 여러 가지 정보원을 활용하여 자료를 찾았는가?","정보탐색하기-탐색한 정보의 위치는 잘 파악하였는가?","정보분석과 이해-과제 해결에 필요한 정보를 자신의 자료로 이해하였는가?","정보 종합 및 표현-내 생각이나 의견을 반영하여 정보를 표현하였는가?"]},
+
+    {"id":"q11","num":11,"title":"11. 정보 활동 평가(결과)","text":"정보 과제를 수행한 뒤 결과에 대해 평가하려고 합니다. 다음 중 결과 평가 중 옳지 않은 것은 무엇일까요?","options":["과제의 내용은 타당성이 있는가?","종합한 정보를 내용에 알맞게 표현하였는가?","과제의 내용은 정확한가?","참고 문헌과 자료의 출처를 정확히 밝혔는가?"]},
+
+    {"id":"q12","num":12,"title":"12. 정보 문제해결과정 이해","text":"사회시간에 선생님이 과제를 내줬다. 우리 지역 뉴스를 만들어 보는 것이었다. OO는 뉴스에 들어갈 자료를 찾고, 정리해서 뉴스를 만들었다. 다음 중 OO가 수행한 정보문제 해결과정에 대한 설명으로 올바르지 않은 것은 무엇일까요?","options":["정보문제 정의하기- 우리 지역 뉴스 만들기","정보수집하기- 우리 지역의 다양한 사업과 관련 뉴스 검색하기","정보 표현하기 – 지역 사업 조사 결과를 바탕으로 뉴스 만들기","정보활동 마무리하기 – 정보 문제 해결 과정을 도식화하기"]},
+
+    {"id":"q13","num":13,"title":"13. 정보탐색, 디지털","text":"다음은 사전에서 핵심어를 확장하는 방법 중 하나입니다. 주어진 제시어를 보고 더 큰말(상위어), 더 작은말(하위어), 유사어(동의어)를 바르게 연결한 것이 아닌 것은 무엇일까요?\n제시어: 동물","options":["더 큰말: 짐승","유사어: 금수","더 작은말: 포유류","더 작은말: 연체동물"]},
+
+    {"id":"q14","num":14,"title":"14. 정보평가","text":"다음은 정보의 유용성을 평가하는 요소에 대한 예시입니다. 다음 중 정보 유용성 평가 요소가 올바르지 않은 것은 무엇일까요?","options":["완전성- 우리나라 사람들이 가지고 있는 간지(띠)는 12가지입니다.","정확성- 이 설문조사의 오차 범위는 ±3% 이내입니다","출처의 신뢰성- 인터넷카페에서 아파트 공사 중 고려시대 유물을 발견했다는 글이 올라왔다.","일관성- 최OO교수님은 여러 인터뷰에서 동일하게 OO화산은 활화산임을 증명했다."]},
+
+    {"id":"q15","num":15,"title":"15. 정보종합, 표현","text":"다음과 같은 정보를 표나 그래프로 나타내려고 합니다. 주어진 정보의 특성에 맞게 가장 유용한 것은 무엇일까요?\n\n<보기>\n우리 학교 학생은 총 800명입니다. 남학생은 420명이고, 여학생은 380명입니다.","options":["막대그래프","원 그래프","꺾은선 그래프","방사형 그래프"]},
+
+    {"id":"q16","num":16,"title":"16. 정보종합, 표현","text":"다음은 탐색한 자료의 출처를 남기는 방법에 대한 문제입니다. 다음 중 올바르게 출처를 남긴 것은 무엇일까요?\n\n<보기>\n2025년에 OO중학교에서 발행된 「코믹한 친구들(저자: OO중학교 동아리)」 45쪽","options":["OO중학교 동아리 지음. 「코믹한 친구들」. OO중학교. 45쪽. 2025","OO중학교 지음. 「코믹한 친구들」. OO중학교 동아리. 2025. 45쪽.","코믹한 친구들 지음. 「OO중학교」. OO중학교 동아리. 2025. 45쪽","OO중학교 동아리 지음. 「코믹한 친구들」. OO중학교. 2025. 45쪽."]},
+
+    {"id":"q17","num":17,"title":"17. 정보표현- 저작권 CCL","text":"CCL이란 Creative Commons License의 줄임말입니다. 저작권자가 다른 사람들이 어떤 조건에서 사용할 수 있는지 명확하게 표시한 것입니다. 다음 CCL 표시 중 의미가 올바르지 않은 것은 무엇일까요?","options":["저작자표시(BY: 전치사by): 콘텐츠를 사용할 때 원작자 이름을 밝히지 않아도 된다.","비영리(NC: Non-commercial): 해당 콘텐츠를 사용해서 돈을 벌면 안 된다.","변경금지(ND: No Derivative Works): 원작 그대로 사용해야 한다.","동일조건 변경 허락(SA: Share-Alike): 콘텐츠를 변경해서 사용해도 되지만 새로 만든 콘텐츠에도 똑같이 CCL을 적용해야 한다."]},
+
+    {"id":"q18","num":18,"title":"18. 정보문제 해결과정 이해","text":"오늘은 ‘제주도 관광지’ 중 한 곳을 골라 홍보 책자를 만들어 보는 활동을 하는 날입니다. OO는 성산일출봉을 홍보하는 포스터를 만들어 홍보 책자를 제작하려고 합니다. 다음 중 OO가 수행한 정보문제 해결과정 단계별 활동으로 옳지 않은 것은 무엇일까요?","options":["정보문제 정의하기– 제주도 관광지 중 성산일출봉 홍보책자 만들기","정보수집하기- 제주시 홈페이지에서 성산일출봉 자료 찾기","정보표현하기- 성산일출봉 포스터에 방문경로와 주변 맛집 소개하기","정보활동 마무리하기- 온라인 디자인 툴을 활용하여 성산일출봉 포스터 만들기"]},
+
+    {"id":"q19","num":19,"title":"19. 매체문화와 정보생활 54, 89페이지","text":"다음은 정보사회가 가져온 변화에 대한 예시입니다. 다음 중 영향이 올바르지 않은 것은 무엇일까요?","options":["정치영역: 우리나라 국민은 정보 접근성이 향상 되어 대통령 선거 공약과 정책을 포털사이트에서 쉽게 확인이 가능합니다.","경제영역: 수도권이 아닌 지방에서도 디지털 기술을 활용하여 시공간의 제약을 극복한 온라인 경제활동을 할 수 있습니다.","사회영역: 24시간 언제든지 온라인 쇼핑몰을 활용하여 쇼핑이 가능합니다.","문화영역: OTT서비스를 활용하여 우리나라뿐 아니라 다른 나라의 새로운 콘텐츠를 즐기고 향유할 수 있습니다."]},
+
+    {"id":"q20","num":20,"title":"20. 정보분석 110페이지","text":"다음 포스터는 OOOO에 관한 포스터입니다. OOOO를 식별하기 위한 방법과 전략으로 옳지 않은 것은 무엇일까요?\n(아래 포스터 이미지 참고)","options":["자기선별: 주관적이고 신뢰할만한 정보를 선택한다.","출처 확인: 신뢰할만한 제공사에서 제공한 정보인지 확인하고 출처를 확인한다.","다양한 정보원 비교: 단일 정보원에서만 나온 정보보다 다양한 정보원에서 확인된 정보인지 확인한다.","헤드라인 주의: 종종 강렬한 헤드라인으로 사람들의 관심을 끌기도 하니 헤드라인만으로 판단하지 말고 내용을 확인한다."]},
+
+    {"id":"q21","num":21,"title":"21. 정보종합, 표현","text":"다음 자료는 환경을 위한 광고를 보고 정리한 표입니다. 다음 중 자료를 분석할 수 있는 정보가 아닌 것은 무엇일까요?\n(아래 참고링크 클릭)","options":["환경 보호를 위한 방법","환경보호에 도움이 되는 물건","환경보호에 도움되는 음식메뉴","환경보호를 노력했을 때 감축되는 탄소량"]},
+
+    {"id":"q22","num":22,"title":"22. 정보분석","text":"다음은 1번 영상과 2번 영상에 대한 설명입니다. 두 영상의 공통된 주제는 무엇일까요?\n(아래 참고링크 클릭)","options":["공중도덕","생활습관","바른언어사용","대중교통예절"]},
+
+    {"id":"q23","num":23,"title":"23. 정보분석","text":"다음은 독서를 하며 K-W-L-P 표를 작성한 내용입니다. 다음 중 KWLP가 잘못 연결되어 있는 것은 무엇일까요?\n(아래 참고링크 클릭)","options":["K Know 알고 있는 것: 환경과 인간은 어떤 관계가 있는가?","W Want 알고 싶은 것: 침묵의 봄이라는 책 제목의 의미는 무엇인가.","L Learn 알게 된 것: 살충제를 사용한 결과 새가 죽어 ‘침묵의 봄’이 되었다.","P Plus 더 알고 싶은 것: 환경 보호를 위한 생활 속 실천 방법은 무엇인가?"]},
+
+    {"id":"q24","num":24,"title":"24. 정보문제 해결 과정 이해","text":"다음은 스마트폰 과의존 예방과 관련된 광고입니다. 다음 중 정보문제 해결 활동 주제로 옳지 않은 것은 무엇일까요?\n(아래 참고링크 클릭)","options":["스마트폰 없는 하루 일지 쓰기","우리 가족 스마트폰 사용 스케쥴 만들기","우리 학교 스마트폰 사용 규칙 만들기","스마트폰을 활용한 과제 탐구하기"]},
+
+    {"id":"q25","num":25,"title":"25. 정보탐색","text":"도서관에서 ‘호랑이와 곶감’이라는 동화를 찾으려고 합니다. 다음 중 자료의 분류기호를 올바르게 찾은 것은 무엇일까요?\n(아래 참고링크 클릭: 국립세종도서관)","options":["813.8","813.7","833.8","823.7"]},
+
+    {"id":"q26","num":26,"title":"26. 정보문제 해결 과정 이해","text":"다음은 구글 이미지 검색을 통해 작품의 정보를 찾아 정리한 내용입니다. 다음 중 옳지 않은 것은 무엇일까요?\n(아래 참고링크 클릭)","options":["화가: 신사임당","제목: 가지와 나비","그린 시기: 조선시대","설명: 초충도(草蟲圖풀과 풀벌레를 그린 그림)"]},
+
+    {"id":"q27","num":27,"title":"27. 정보종합, 표현","text":"해당 영상을 보고 책 ‘사피엔스’의 내용을 표로 정리해보자 합니다. 다음 표를 보고 알맞지 않은 내용은 무엇일까요?\n(아래 참고링크 클릭)","options":["인지혁명","종교혁명","돈","제국"]}
+  ];
+
+  // ✅ 문항별 링크/이미지 연결(요청하신 것 전부 반영)
+  const patch = {
+    q2: { links: [{ label: "2번 참고자료(환경부 PDF)", url: "https://me.go.kr/home/file/readDownloadFile2.do?fileId=286624&fileSeq=1&fileName=9b21fa71bd0607a9fb18f2223238c25270c07f988a98c05a1a9b6b78a411fc1c&openYn=Y" }] },
+    q15:{ imageSrc:"img/q15-1.png", imageAlt:"15번 1번 이미지" },
+    q16:{ imageSrc:"img/q16-2.png", imageAlt:"16번 2번 이미지" },
+    q20:{ imageSrc:"img/q20-3.png", imageAlt:"20번 3번 이미지(포스터)", links:[{ label:"20번 참고 링크", url:"https://koreatimestx.com/archives/19380" }] },
+    q21:{ links:[{ label:"21번 참고 링크(KOBACO)", url:"https://www.kobaco.co.kr/site/main/archive/advertising/5/14851?cp=1&pageSize=8&sortDirection=DESC&arcUse=true&arcCategory=5&metaCode1=broadcast&adtDefaultYear=false" }] },
+    q22:{ links:[
+      { label:"22번 1번 영상(KOBACO)", url:"https://www.kobaco.co.kr/site/main/archive/advertising/5/14544?cp=1&pageSize=8&sortDirection=DESC&arcUse=true&arcCategory=5&metaCode1=broadcast&metaCode2=psa_new_006&metaCode3=psa_new_006_001&adtManufactureYear=&adtDefaultYear=false" },
+      { label:"22번 2번 영상(KOBACO)", url:"https://www.kobaco.co.kr/site/main/archive/advertising/5/858?cp=1&pageSize=8&sortDirection=DESC&arcUse=true&arcCategory=5&metaCode1=broadcast&metaCode2=psa_new_006&metaCode3=psa_new_006_001&adtManufactureYear=&adtDefaultYear=false" }
+    ]},
+    q23:{ links:[{ label:"23번 참고 링크(채널예스)", url:"https://ch.yes24.com/video/detail/10651" }] },
+    q24:{ links:[{ label:"24번 참고 링크(KOBACO)", url:"https://www.kobaco.co.kr/site/main/archive/advertising/5/1445?cp=1&pageSize=8&sortDirection=DESC&arcUse=true&arcCategory=5&metaCode1=webtoon&adtDefaultYear=false" }] },
+    q25:{ links:[{ label:"25번 참고 링크(국립세종도서관)", url:"https://sejong.nl.go.kr/index.jsp" }] },
+    q26:{ imageSrc:"img/q26-4.png", imageAlt:"26번 4번 이미지", links:[{ label:"26번 구글 이미지 검색", url:"https://www.google.co.kr/" }] },
+    q27:{ links:[{ label:"27번 참고 영상(YouTube)", url:"https://www.youtube.com/watch?v=EYn7EcWvr_4" }] }
+  };
+  questions.forEach(q => { if (patch[q.id]) Object.assign(q, patch[q.id]); });
+
+  // ===== 정답(선생님 확정본: 1번~27번) =====
+  const answerIndexList = [2,4,2,4,1,2,4,3,2,1,2,4,1,3,2,4,1,4,3,1,3,1,1,4,2,2,2];
+
+  const formEl = document.getElementById("survey");
+  const errorEl = document.getElementById("error");
+  const resultCard = document.getElementById("resultCard");
+  const resultEl = document.getElementById("result");
+  const scoreBox = document.getElementById("scoreBox");
+  const scoreText = document.getElementById("scoreText");
+  const ratioText = document.getElementById("ratioText");
+
+  function escapeHtml(str){
+    return String(str)
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
+  function linkify(text){
+    const safe = escapeHtml(text);
+    const urlRegex = /(https?:\/\/[^\s)>\]]+)/g;
+    return safe
+      .replace(urlRegex, (url) => `<a class="q-link" href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`)
+      .replaceAll("\n", "<br>");
+  }
+
+  function render() {
+    formEl.innerHTML = "";
+    questions.forEach((q) => {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.dataset.qid = q.id;
+
+      const title = document.createElement("p");
+      title.className = "q-title";
+      title.textContent = q.title;
+      const req = document.createElement("span");
+      req.className = "req";
+      req.textContent = "*";
+      title.appendChild(req);
+      card.appendChild(title);
+
+      if (q.text) {
+        const txt = document.createElement("p");
+        txt.className = "q-text";
+        txt.innerHTML = linkify(q.text);
+        card.appendChild(txt);
+      }
+
+      if (Array.isArray(q.links) && q.links.length) {
+        const ul = document.createElement("ul");
+        ul.className = "q-links";
+        q.links.forEach((l) => {
+          const li = document.createElement("li");
+          const a = document.createElement("a");
+          a.className = "q-link";
+          a.href = l.url;
+          a.target = "_blank";
+          a.rel = "noopener noreferrer";
+          a.textContent = l.label || "참고 링크";
+          li.appendChild(a);
+
+          const hint = document.createElement("span");
+          hint.className = "q-link-hint";
+          hint.textContent = "(새 창)";
+          li.appendChild(hint);
+
+          ul.appendChild(li);
+        });
+        card.appendChild(ul);
+      }
+
+      if (q.imageSrc) {
+        const media = document.createElement("div");
+        media.className = "q-media";
+        const img = document.createElement("img");
+        img.src = q.imageSrc;
+        img.alt = q.imageAlt || `${q.num}번 문제 이미지`;
+        media.appendChild(img);
+        card.appendChild(media);
+      }
+
+      q.options.forEach((opt, idx) => {
+        const label = document.createElement("label");
+        label.className = "opt";
+
+        const input = document.createElement("input");
+        input.type = "radio";
+        input.name = q.id;
+        input.value = String(idx + 1);
+        input.required = true;
+
+        const span = document.createElement("span");
+        span.textContent = opt;
+
+        label.appendChild(input);
+        label.appendChild(span);
+        card.appendChild(label);
+      });
+
+      const fb = document.createElement("div");
+      fb.className = "feedback";
+      fb.id = `fb_${q.id}`;
+      fb.style.display = "none";
+      card.appendChild(fb);
+
+      formEl.appendChild(card);
+    });
+  }
+
+  function getSelectedIndex(qid) {
+    const checked = document.querySelector(`input[name="${qid}"]:checked`);
+    return checked ? Number(checked.value) : null;
+  }
+
+  function allAnswered() {
+    return questions.every(q => getSelectedIndex(q.id) !== null);
+  }
+
+  function clearAll() {
+    formEl.reset();
+    errorEl.style.display = "none";
+    resultCard.style.display = "none";
+    resultEl.textContent = "";
+    scoreBox.style.display = "none";
+    questions.forEach(q => {
+      const fb = document.getElementById(`fb_${q.id}`);
+      if (fb) fb.style.display = "none";
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function grade() {
+    let correctCount = 0;
+    const details = [];
+
+    questions.forEach((q, idx) => {
+      const selectedIdx = getSelectedIndex(q.id);
+      const correctIdx = answerIndexList[idx];
+      const fb = document.getElementById(`fb_${q.id}`);
+
+      const isCorrect = (selectedIdx === correctIdx);
+      if (isCorrect) correctCount++;
+
+      fb.innerHTML = isCorrect
+        ? `<span class="ok">정답</span>`
+        : `<span class="no">오답</span> (정답: ${correctIdx}번)`;
+      fb.style.display = "block";
+
+      details.push({ qid: q.id, selected: selectedIdx, correct: correctIdx, isCorrect });
+    });
+
+    scoreBox.style.display = "flex";
+    scoreText.textContent = `정답 ${correctCount}개 / ${questions.length}문항`;
+    ratioText.textContent = `정답률 ${Math.round((correctCount / questions.length) * 100)}%`;
+
+    return { correctCount, details };
+  }
+
+  document.getElementById("btnSubmit").addEventListener("click", () => {
+    errorEl.style.display = "none";
+
+    if (!allAnswered()) {
+      errorEl.textContent = "필수 문항을 모두 체크해 주세요.";
+      errorEl.style.display = "block";
+      return;
+    }
+
+    const grading = grade();
+    const payload = {
+      title: "정보활용능력평가",
+      submittedAt: new Date().toISOString(),
+      score: {
+        correctCount: grading.correctCount,
+        total: questions.length,
+        percent: Math.round((grading.correctCount / questions.length) * 100)
+      },
+      answers: Object.fromEntries(questions.map(q => [q.id, getSelectedIndex(q.id)])),
+      gradingDetails: grading.details
+    };
+
+    resultEl.textContent = JSON.stringify(payload, null, 2);
+    resultCard.style.display = "block";
+    resultCard.scrollIntoView({ behavior: "smooth" });
+  });
+
+  document.getElementById("btnClear").addEventListener("click", clearAll);
+
+  render();
+</script>
+</body>
+</html>

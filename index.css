@@ -1,0 +1,314 @@
+/* Global Styles */
+@import url('https://fonts.googleapis.com/css2?family=Jua&family=Nanum+Gothic:wght@400;700&display=swap');
+
+:root {
+    --bg-color: #1a1a2e;
+    --card-bg: rgba(255, 255, 255, 0.1);
+    --text-color: #ffffff;
+    --accent-color: #e94560;
+    --hover-color: #16213e;
+
+    /* Card Colors */
+    --card-1: #6c5ce7;
+    /* Interesting */
+    --card-2: #fdcb6e;
+    /* Nobel */
+    --card-3: #55efc4;
+    /* Rainshower */
+    --card-4: #00b894;
+    /* Rules */
+    --card-5: #ff7675;
+    /* Quiz - Highlighted */
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Nanum Gothic', sans-serif;
+    background-color: var(--bg-color);
+    background-image: radial-gradient(circle at 10% 20%, rgb(90, 92, 106) 0%, rgb(32, 45, 68) 90.2%);
+    background-attachment: fixed;
+    /* Fix bg when scrolling */
+    color: var(--text-color);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-x: hidden;
+}
+
+/* Header */
+header {
+    text-align: center;
+    margin: 60px 0 40px;
+    animation: fadeInDown 1s ease-out;
+}
+
+h1 {
+    font-family: 'Jua', sans-serif;
+    font-size: 3.5rem;
+    color: #fff;
+    text-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    margin-bottom: 10px;
+    letter-spacing: 2px;
+}
+
+header p {
+    font-size: 1.2rem;
+    color: #a2a8d3;
+    font-weight: 300;
+}
+
+/* Main Menu Grid */
+.menu-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 30px;
+    width: 90%;
+    max-width: 1200px;
+    padding: 20px;
+    perspective: 1000px;
+}
+
+.menu-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 30px;
+    text-decoration: none;
+    color: white;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.menu-card:hover {
+    transform: translateY(-10px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Card Icons/Emoji */
+.card-icon {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    transition: transform 0.4s ease;
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.2));
+}
+
+.menu-card:hover .card-icon {
+    transform: scale(1.2) rotate(5deg);
+}
+
+.card-title {
+    font-family: 'Jua', sans-serif;
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+}
+
+.card-desc {
+    font-size: 1rem;
+    color: #dfe6e9;
+    line-height: 1.5;
+}
+
+/* Specific Card Accents */
+.card-1 {
+    border-top: 5px solid var(--card-1);
+}
+
+.card-1 .card-title {
+    color: var(--card-1);
+}
+
+.card-2 {
+    border-top: 5px solid var(--card-2);
+}
+
+.card-2 .card-title {
+    color: var(--card-2);
+}
+
+.card-3 {
+    border-top: 5px solid var(--card-3);
+}
+
+.card-3 .card-title {
+    color: var(--card-3);
+}
+
+.card-3 .card-icon {
+    animation: float 3s ease-in-out infinite;
+}
+
+.card-4 {
+    border-top: 5px solid var(--card-4);
+}
+
+.card-4 .card-title {
+    color: var(--card-4);
+}
+
+/* Card 5 - Hero Section (Quiz) */
+.card-5 {
+    grid-column: 1 / -1;
+    /* Span full width */
+    display: flex;
+    flex-direction: row;
+    /* Horizontal layout */
+    align-items: center;
+    justify-content: center;
+    gap: 40px;
+    padding: 60px 40px;
+
+    border-top: 8px solid var(--card-5);
+    background: linear-gradient(135deg, rgba(255, 118, 117, 0.2), rgba(255, 118, 117, 0.05));
+    animation: pulse-border 2s infinite;
+}
+
+.card-5 .card-icon {
+    font-size: 6rem;
+    margin-bottom: 0;
+}
+
+.card-5 .card-info {
+    text-align: left;
+}
+
+.card-5 .card-title {
+    font-size: 3rem;
+    color: var(--card-5);
+    margin-bottom: 15px;
+}
+
+.card-5 .card-desc {
+    font-size: 1.3rem;
+    color: #ffdada;
+}
+
+.card-5:hover {
+    background: rgba(255, 118, 117, 0.25);
+    transform: translateY(-5px) scale(1.01);
+    /* Subtle lift for large card */
+}
+
+@keyframes pulse-border {
+    0% {
+        box-shadow: 0 0 0 0 rgba(255, 118, 117, 0.4);
+        border-color: rgba(255, 118, 117, 0.4);
+    }
+
+    70% {
+        box-shadow: 0 0 0 15px rgba(255, 118, 117, 0);
+        border-color: rgba(255, 118, 117, 0.8);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(255, 118, 117, 0);
+        border-color: rgba(255, 118, 117, 0.4);
+    }
+}
+
+/* Floating Particles (Background) */
+.background-shapes {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.shape {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(50px);
+    opacity: 0.4;
+    animation: drift 20s infinite alternate;
+}
+
+.shape:nth-child(1) {
+    top: -10%;
+    left: -10%;
+    width: 500px;
+    height: 500px;
+    background: #6c5ce7;
+    animation-delay: 0s;
+}
+
+.shape:nth-child(2) {
+    bottom: -10%;
+    right: -10%;
+    width: 400px;
+    height: 400px;
+    background: #e94560;
+    animation-delay: -5s;
+}
+
+.shape:nth-child(3) {
+    top: 40%;
+    left: 60%;
+    width: 300px;
+    height: 300px;
+    background: #00cec9;
+    animation-delay: -10s;
+}
+
+/* Animations */
+@keyframes drift {
+    from {
+        transform: translate(0, 0);
+    }
+
+    to {
+        transform: translate(30px, 30px);
+    }
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    h1 {
+        font-size: 2.5rem;
+    }
+
+    .menu-container {
+        grid-template-columns: 1fr;
+    }
+}

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>소나기: 인터랙티브 노벨</title>
+    <style>
+        body {
+            font-family: 'Nanum Gothic', sans-serif;
+            background-color: #1a1a2e;
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; margin: 0; color: #333;
+        }
+
+        #game-window {
+            width: 100%; max-width: 500px; height: 800px;
+            background: white; border-radius: 20px; overflow: hidden;
+            display: flex; flex-direction: column; position: relative;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+
+        /* 표지 화면 */
+        #start-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), 
+                        url('https://images.unsplash.com/photo-1543791187-df796fa11835?q=80&w=800');
+            background-size: cover; background-position: center;
+            display: flex; flex-direction: column; justify-content: center;
+            align-items: center; text-align: center; color: white; z-index: 20;
+            padding: 30px; box-sizing: border-box;
+        }
+
+        #start-screen h1 { font-size: 40px; margin-bottom: 20px; letter-spacing: 5px; }
+        #start-screen p { font-size: 16px; line-height: 1.8; margin-bottom: 40px; word-break: keep-all; }
+        
+        .start-btn {
+            padding: 15px 50px; font-size: 18px; background: #4a6741; color: white;
+            border: none; border-radius: 30px; cursor: pointer; transition: 0.3s;
+        }
+        .start-btn:hover { background: #5d8252; transform: scale(1.05); }
+
+        /* 게임 화면 */
+        #scene-bg { height: 45%; width: 100%; background-size: cover; background-position: center; transition: 0.8s; position: relative; }
+        #stat-bar { position: absolute; top: 15px; left: 15px; background: rgba(255, 255, 255, 0.9); padding: 8px 15px; border-radius: 15px; font-weight: bold; font-size: 14px; }
+        #dialogue-box { height: 55%; padding: 25px; box-sizing: border-box; background: #fff; display: flex; flex-direction: column; }
+        #name-tag { font-size: 18px; font-weight: bold; color: #4a6741; margin-bottom: 12px; border-left: 5px solid #4a6741; padding-left: 10px; }
+        #text-content { font-size: 15.5px; line-height: 1.7; margin-bottom: 20px; flex-grow: 1; overflow-y: auto; }
+        .choices { display: flex; flex-direction: column; gap: 8px; }
+        .choice-btn { padding: 12px; border: 1px solid #e0e0e0; border-radius: 12px; background: white; cursor: pointer; text-align: left; transition: 0.2s; font-size: 14px; }
+        .choice-btn:hover { background: #f0f7f4; transform: translateX(5px); }
+
+        /* 엔딩 화면 보강 */
+        #ending-screen {
+            display: none; position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%; background: #fdfaf6;
+            flex-direction: column; justify-content: flex-start; align-items: center;
+            text-align: center; padding: 20px; box-sizing: border-box; z-index: 10;
+            overflow-y: auto;
+        }
+        #ending-char-img {
+            width: 100%; max-height: 300px; object-fit: cover;
+            border-radius: 15px; margin-bottom: 20px; border: 5px solid white;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-window">
+    <div id="start-screen">
+        <h1>소나기</h1>
+        <p>황순원의 단편 소설 '소나기'의 주인공이 되어 보세요.<br>순수한 소년의 마음으로 소녀에게 다가가 보세요.</p>
+        <button class="start-btn" onclick="startGame()">이야기 시작</button>
+    </div>
+
+    <div id="scene-bg">
+        <div id="stat-bar">🌿 소녀와의 유대감: <span id="love-pts">0</span></div>
+    </div>
+    <div id="dialogue-box">
+        <div id="name-tag">이름</div>
+        <div id="text-content">로딩 중...</div>
+        <div class="choices" id="choices"></div>
+    </div>
+
+    <div id="ending-screen">
+        <img id="ending-char-img" src="" alt="엔딩 캐릭터 이미지">
+        <h1 id="ending-title" style="color: #4a6741; margin: 10px 0;">엔딩</h1>
+        <p id="ending-desc" style="line-height: 1.8; margin-bottom: 20px; padding: 0 10px;"></p>
+        <button onclick="location.reload()" style="padding:12px 30px; cursor:pointer; background: #4a6741; color: white; border: none; border-radius: 25px;">다시 하기</button>
+    </div>
+</div>
+
+<script>
+    const gameData = [
+        {
+            id: 0, name: "나 (소년)", text: "개울가 징검다리 한가운데 소녀가 앉아 있다. 서울에서 왔다는 윤 초시네 손녀딸이다. 비켜줄 생각을 않는 것 같은데...",
+            img: "https://images.unsplash.com/photo-1543791187-df796fa11835?q=80&w=800",
+            choices: [
+                { text: "말없이 가만히 기다린다.", score: 10, next: 1 },
+                { text: "\"저기... 나 건너가야 하는데.\"", score: 5, next: 1 },
+                { text: "첨벙거리며 물을 튀겨 주의를 끈다.", score: 2, next: 1 }
+            ]
+        },
+        {
+            id: 1, name: "소녀", text: "\"이 바보!\" 소녀가 하얀 조약돌을 던지고 단발머리를 살랑이며 뛰어간다. 맑은 개울물 소리만 들린다.",
+            img: "https://images.unsplash.com/photo-1518495973542-4542c06a5843?q=80&w=500",
+            choices: [
+                { text: "그 조약돌을 소중히 주워 주머니에 넣는다.", score: 10, next: 2 },
+                { text: "조약돌을 다시 멀리 던져버린다.", score: 0, next: 2 }
+            ]
+        },
+        {
+            id: 2, name: "나 (소년)", text: "산 너머로 놀러 간 날, 소녀가 예쁜 도라지꽃을 보고 기뻐한다. 어떤 꽃을 꺾어줄까?",
+            img: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=500",
+            choices: [
+                { text: "소녀가 좋아하는 보랏빛 도라지꽃", score: 10, next: 3 },
+                { text: "노란 국화꽃 한 송이", score: 5, next: 3 }
+            ]
+        },
+        {
+            id: 3, name: "시스템", text: "갑자기 하늘이 어두워지더니 세찬 소나기가 쏟아진다. 소녀의 어깨가 떨리고 있다.",
+            img: "https://images.unsplash.com/photo-1534274988757-a28bf1a57c17?q=80&w=500",
+            choices: [
+                { text: "따뜻한 수수단 속으로 데려가 비를 피한다.", score: 10, next: 4 },
+                { text: "큰 나무 아래에서 겉옷을 덮어준다.", score: 7, next: 4 }
+            ]
+        },
+        {
+            id: 4, name: "나 (소년)", text: "도랑물이 불어났다. 나는 소녀를 등에 업고 건너기로 한다. 소녀의 가벼운 몸무게가 등에 느껴진다.",
+            img: "https://images.unsplash.com/photo-1437622368342-7a3d73a34c8f?q=80&w=500",
+            choices: [
+                { text: "조금이라도 젖지 않게 꽉 업고 건넌다.", score: 10, next: 5 },
+                { text: "징검다리 바위를 조심조심 밟으며 건넌다.", score: 7, next: 5 }
+            ]
+        }
+    ];
+
+    let currentStep = 0;
+    let totalScore = 0;
+
+    function startGame() {
+        document.getElementById('start-screen').style.display = 'none';
+        renderScene();
+    }
+
+    function renderScene() {
+        if (currentStep >= gameData.length) {
+            showEnding();
+            return;
+        }
+
+        const scene = gameData[currentStep];
+        document.getElementById('scene-bg').style.backgroundImage = `url('${scene.img}')`;
+        document.getElementById('name-tag').innerText = scene.name;
+        document.getElementById('text-content').innerText = scene.text;
+        document.getElementById('love-pts').innerText = totalScore;
+
+        const choicesDiv = document.getElementById('choices');
+        choicesDiv.innerHTML = '';
+        scene.choices.forEach(choice => {
+            const btn = document.createElement('button');
+            btn.classList.add('choice-btn');
+            btn.innerText = choice.text;
+            btn.onclick = () => { totalScore += choice.score; currentStep++; renderScene(); };
+            choicesDiv.appendChild(btn);
+        });
+    }
+
+    function showEnding() {
+        document.getElementById('dialogue-box').style.display = 'none';
+        document.getElementById('scene-bg').style.display = 'none';
+        const ending = document.getElementById('ending-screen');
+        ending.style.display = 'flex';
+
+        const title = document.getElementById('ending-title');
+        const desc = document.getElementById('ending-desc');
+        const img = document.getElementById('ending-char-img');
+
+        if (totalScore >= 45) {
+            title.innerText = "🌸 영원히 묻어둔 보랏빛 추억";
+            desc.innerHTML = "당신과 소녀는 짧지만 가장 순수한 마음을 나누었습니다. 소녀는 당신과 함께 비를 피하며 묻은 <b>진흙물을 소중한 추억</b>으로 간직한 채 눈을 감았습니다. 소녀의 유언은 당신과 함께했던 그 옷을 그대로 입혀달라는 것이었습니다.";
+            // 소년과 소녀가 함께 있는 서정적 이미지
+            img.src = "https://images.unsplash.com/photo-1490730141103-6cac27aaab94?q=80&w=800";
+        } else if (totalScore >= 25) {
+            title.innerText = "☔ 젖은 채로 남은 기억";
+            desc.innerText = "소녀와 소중한 추억을 만들었지만, 마지막 이별은 너무나 갑작스러웠습니다. 개울가에서 소녀가 던진 하얀 조약돌만이 주머니 속에서 차갑게 식어갑니다.";
+            // 혼자 남은 소년의 느낌 (풍경)
+            img.src = "https://images.unsplash.com/photo-1505833289633-899446f9060b?q=80&w=800";
+        } else {
+            title.innerText = "☁️ 안개 낀 개울가";
+            desc.innerText = "소녀의 서툰 마음을 다 알아채지 못한 채 시간이 흘러버렸습니다. 소녀는 멀리서 당신을 바라보다 떠났을지도 모릅니다. 소설을 다시 읽고 소녀의 진심을 찾아보세요.";
+            // 쓸쓸한 시골길 이미지
+            img.src = "https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=800";
+        }
+    }
+</script>
+
+</body>
+</html>

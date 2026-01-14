@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>도서관 매너 왕 찾기!</title>
+    <style>
+        body { font-family: 'Nanum Gothic', sans-serif; background-color: #e8f5e9; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        #game-container { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); text-align: center; width: 400px; }
+        h1 { color: #2e7d32; font-size: 24px; }
+        #question { font-size: 20px; margin: 20px 0; min-height: 60px; font-weight: bold; }
+        .btn-container { display: flex; justify-content: space-around; margin-top: 20px; }
+        button { padding: 15px 30px; font-size: 18px; border: none; border-radius: 10px; cursor: pointer; transition: transform 0.2s; }
+        .btn-good { background-color: #4caf50; color: white; }
+        .btn-bad { background-color: #f44336; color: white; }
+        button:hover { transform: scale(1.1); }
+        #score { margin-top: 20px; font-size: 18px; color: #555; }
+        #message { margin-top: 15px; font-weight: bold; height: 20px; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <h1>📚 도서관 매너 왕 찾기</h1>
+    <div id="question">준비되셨나요?</div>
+    <div class="btn-container">
+        <button class="btn-good" onclick="checkAnswer(true)">⭕ 좋아요</button>
+        <button class="btn-bad" onclick="checkAnswer(false)">❌ 안돼요</button>
+    </div>
+    <div id="message"></div>
+    <div id="score">점수: 0 / 0</div>
+</div>
+
+<script>
+    const quizData = [
+        { q: "도서관 안에서는 살금살금 걸어 다녀요.", a: true },
+        { q: "보고 싶은 책을 가지고 뛰어다녀요.", a: false },
+        { q: "다 읽은 책은 제자리에 예쁘게 꽂아둬요.", a: true },
+        { q: "친구를 만나서 큰 소리로 인사해요.", a: false },
+        { q: "책장에 있는 책들을 마구 흐트러뜨려요.", a: false },
+        { q: "음료수나 과자를 먹으며 책을 봐요.", a: false },
+        { q: "책 장을 넘길 때는 조심조심 넘겨요.", a: true },
+        { q: "도서관 선생님께 궁금한 것을 작게 물어봐요.", a: true }
+    ];
+
+    let currentIdx = 0;
+    let score = 0;
+
+    function showQuestion() {
+        if (currentIdx < quizData.length) {
+            document.getElementById('question').innerText = quizData[currentIdx].q;
+            document.getElementById('message').innerText = "";
+        } else {
+            document.getElementById('question').innerText = "🎉 축하합니다! 매너 왕 등극!";
+            document.querySelector('.btn-container').style.display = 'none';
+            document.getElementById('message').innerText = "모든 문제를 풀었습니다.";
+        }
+    }
+
+    function checkAnswer(userAnswer) {
+        if (currentIdx >= quizData.length) return;
+
+        if (userAnswer === quizData[currentIdx].a) {
+            score++;
+            document.getElementById('message').innerText = "정답이에요! 👏";
+            document.getElementById('message').style.color = "blue";
+        } else {
+            document.getElementById('message').innerText = "조금 더 생각해보세요! 😢";
+            document.getElementById('message').style.color = "red";
+        }
+
+        currentIdx++;
+        document.getElementById('score').innerText = `점수: ${score} / ${currentIdx}`;
+        
+        // 1.5초 뒤에 다음 문제로 이동
+        setTimeout(showQuestion, 1500);
+    }
+
+    // 첫 문제 시작
+    showQuestion();
+</script>
+
+</body>
+</html>
